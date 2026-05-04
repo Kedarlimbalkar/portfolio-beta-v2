@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import KedarPhoto from "./Kedar.jpeg";
+const KedarPhoto "https://drive.google.com/file/d/1AC92skEHlBmkpe9QzyxZlsrm2M0435oR/view?usp=sharing";
 
 // ─── EmailJS CONFIG (fill these in when ready) ────────────────────────────────
 const EMAILJS_SERVICE_ID  = "YOUR_SERVICE_ID";
