@@ -322,10 +322,10 @@ function ProjectCard({ project, T }) {
 
   const ghUrl = project.GitHub_Link && project.GitHub_Link.trim() !== ""
     ? project.GitHub_Link
-    : "https://github.com/kedarlimbalkar";
+    : "https://github.com/Kedarlimbalkar";
   const liUrl = project.LinkedIn_Link && project.LinkedIn_Link.trim() !== ""
     ? project.LinkedIn_Link
-    : "https://www.linkedin.com/in/kedarlimbalkar";
+    : "https://www.linkedin.com/in/kedar-limbalkar/";
 
   const BTNS = [
     { key:"yt",    label:"YouTube",   icon:<IcYT />,    url:project.YouTube_Link,  activeColor:"#ff0000", activeBg:"#ff000014", activeBorder:"#ff000035", tooltip:"Watch on YouTube" },
