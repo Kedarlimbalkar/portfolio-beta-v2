@@ -818,7 +818,7 @@ export default function Portfolio() {
             </div>
             <div style={{ display:"flex", gap:20 }}>
               {[
-                ["LinkedIn","https://www.linkedin.com/in/kedarlimbalkar"],
+                ["LinkedIn","https://www.linkedin.com/in/kedar-limbalkar/"],
                 ["GitHub",  "https://github.com/kedarlimbalkar"],
                 ["Email",   "mailto:kedarlimbalkar@gmail.com"],
               ].map(([l, u]) => (
