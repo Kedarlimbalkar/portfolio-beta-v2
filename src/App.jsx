@@ -320,11 +320,18 @@ function ProjectCard({ project, T }) {
   const catColor = { ML: T.accent, Analytics: T.green, Business: T.purple, AI: T.pink }[project.Category] || T.accent;
   const open     = (url) => { if (url && url !== "#" && url !== "") window.open(url, "_blank", "noopener,noreferrer"); };
 
+  const ghUrl = project.GitHub_Link && project.GitHub_Link.trim() !== ""
+    ? project.GitHub_Link
+    : "https://github.com/kedarlimbalkar";
+  const liUrl = project.LinkedIn_Link && project.LinkedIn_Link.trim() !== ""
+    ? project.LinkedIn_Link
+    : "https://www.linkedin.com/in/kedarlimbalkar";
+
   const BTNS = [
     { key:"yt",    label:"YouTube",   icon:<IcYT />,    url:project.YouTube_Link,  activeColor:"#ff0000", activeBg:"#ff000014", activeBorder:"#ff000035", tooltip:"Watch on YouTube" },
     { key:"drive", label:"Drive File",icon:<IcDrive />, url:project.Drive_Link,   activeColor:"#1fa463", activeBg:"#1fa46314", activeBorder:"#1fa46335", tooltip:"Open on Google Drive" },
-    { key:"gh",    label:"GitHub",    icon:<IcGH />,    url:project.GitHub_Link,  activeColor:T.text,    activeBg:T.accentDim, activeBorder:T.border,    tooltip:"View on GitHub" },
-    { key:"li",    label:"LinkedIn",  icon:<IcLI />,    url:project.LinkedIn_Link,activeColor:"#0a66c2", activeBg:"#0a66c214", activeBorder:"#0a66c235", tooltip:"View LinkedIn post" },
+    { key:"gh",    label:"GitHub",    icon:<IcGH />,    url:ghUrl,                activeColor:T.text,    activeBg:T.accentDim, activeBorder:T.border,    tooltip:"View on GitHub" },
+    { key:"li",    label:"LinkedIn",  icon:<IcLI />,    url:liUrl,                activeColor:"#0a66c2", activeBg:"#0a66c214", activeBorder:"#0a66c235", tooltip:"View LinkedIn post" },
   ];
 
   return (
@@ -658,26 +665,6 @@ export default function Portfolio() {
                       <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{e.period}</div>
                     </div>
                   ))}
-                  <div style={{ padding:"14px 18px", borderRadius:9, background:T.surface, border:`1px solid ${T.border}` }}>
-                    <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:T.accent, marginBottom:12 }}>Activities & Leadership</p>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-                      {[
-                        { label:"Core Technical Council 2025", color:T.accent },
-                        { label:"Anchored Carvaan 2024", color:T.green },
-                        { label:"Anchored Kalasangam 2025", color:T.purple },
-                      ].map(({ label, color }) => (
-                        <span key={label} style={{
-                          display:"inline-flex", alignItems:"center", gap:6,
-                          padding:"6px 12px", borderRadius:20,
-                          fontSize:11, fontWeight:600,
-                          color, border:`1px solid ${color}35`, background:`${color}12`,
-                        }}>
-                          <span style={{ width:6, height:6, borderRadius:"50%", background:color, display:"inline-block", flexShrink:0 }} />
-                          {label}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </Reveal>
             </div>
