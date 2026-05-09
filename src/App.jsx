@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import KedarPhoto from "\Kedar.jpeg";
+import KedarPhoto from "./Kedar.jpeg";
 
-// ─── EmailJS CONFIG (fill these in when ready) ────────────────────────────────
+// ─── EmailJS CONFIG — fill in your real keys from https://www.emailjs.com ─────
+// 1. Sign up at emailjs.com → Create a Service (Gmail) → get Service ID
+// 2. Create an Email Template → get Template ID
+// 3. Go to Account → Public Key
 const EMAILJS_SERVICE_ID  = "YOUR_SERVICE_ID";
 const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";
 const EMAILJS_PUBLIC_KEY  = "YOUR_PUBLIC_KEY";
@@ -60,7 +63,7 @@ const SKILLS = {
   "MLOps & Tools":     ["Docker","MLOps","Business Strategy"],
 };
 
-// ─── PROJECTS (hardcoded from your Excel sheet) ───────────────────────────────
+// ─── PROJECTS (from Excel sheet) ─────────────────────────────────────────────
 const PROJECTS = [
   {
     id: 1,
@@ -88,6 +91,66 @@ const PROJECTS = [
   },
   {
     id: 3,
+    Category:     "ML",
+    Title:        "Facial Emotion Recognition System",
+    Metric:       "82% Model Accuracy",
+    Description:  "A deep learning application using CNNs to detect and classify human emotions from real-time visual data.",
+    Tech_Stack:   "TensorFlow,Keras,OpenCV,Streamlit",
+    YouTube_Link: "https://youtu.be/BErcoP1AWvw",
+    Drive_Link:   "https://drive.google.com/drive/folders/1gfjU2y_Srzy9Un76rM22wZGR9UkwQq7n",
+    GitHub_Link:  "https://github.com/Kedarlimbalkar/facialRecog",
+    LinkedIn_Link:"",
+  },
+  {
+    id: 4,
+    Category:     "ML",
+    Title:        "E-commerce Customer Satisfaction Predictor",
+    Metric:       "Optimized Support Classification",
+    Description:  "A predictive analytics system that classifies customer support inquiries and forecasts satisfaction (CSAT) scores using advanced machine learning algorithms.",
+    Tech_Stack:   "Python,XGBoost,SVM,Pandas,Scikit-learn",
+    YouTube_Link: "https://youtu.be/WxA8WGO3j3s",
+    Drive_Link:   "https://drive.google.com/drive/folders/1i8cZcXLJirIrKH-EPX18Hmox-UdatuO4",
+    GitHub_Link:  "https://github.com/Kedarlimbalkar/Shopzilla-CSAT-Prediction",
+    LinkedIn_Link:"",
+  },
+  {
+    id: 5,
+    Category:     "AI",
+    Title:        "Retail Conversational AI Agent",
+    Metric:       "92% Resolution Accuracy",
+    Description:  "A production-grade AI system for automated e-commerce support and intelligent order management.",
+    Tech_Stack:   "LangGraph,LangChain,Groq API,Python",
+    YouTube_Link: "https://youtu.be/YncluBKHu7Q",
+    Drive_Link:   "https://drive.google.com/drive/folders/1AMPPfo1AznJEC82Tu1cMGb2H8BE0dNlr",
+    GitHub_Link:  "",
+    LinkedIn_Link:"",
+  },
+  {
+    id: 6,
+    Category:     "Analytics",
+    Title:        "FedEx Logistics Performance Analysis",
+    Metric:       "22% Cost Reduction",
+    Description:  "Optimized FedEx supply chain efficiency by identifying delivery bottlenecks and cost-saving fulfillment strategies through advanced multivariate data analysis.",
+    Tech_Stack:   "Python",
+    YouTube_Link: "https://youtu.be/-kTZhDST08I",
+    Drive_Link:   "https://drive.google.com/drive/folders/13NUZkxqE-n8Y-pcE_e7p9s9qT65dctWT",
+    GitHub_Link:  "https://github.com/Kedarlimbalkar/FedEx-Logistics-Performance-Analysis",
+    LinkedIn_Link:"",
+  },
+  {
+    id: 7,
+    Category:     "Analytics",
+    Title:        "WhatsApp Data Architecture & Product Analysis",
+    Metric:       "3NF Normalized Architecture",
+    Description:  "A deep-dive dissection of WhatsApp's core functionalities and the design of a production-grade relational database schema.",
+    Tech_Stack:   "MySQL,ER Modeling,Database Design",
+    YouTube_Link: "https://youtu.be/FmOgpKA8sIk",
+    Drive_Link:   "https://drive.google.com/drive/folders/1tRUIaU9cOWKYMlIo1QJcYg966H51viOV",
+    GitHub_Link:  "",
+    LinkedIn_Link:"",
+  },
+  {
+    id: 8,
     Category:     "Business",
     Title:        "Python Basics",
     Metric:       "Problem Solving",
@@ -99,15 +162,27 @@ const PROJECTS = [
     LinkedIn_Link:"",
   },
   {
-    id: 4,
-    Category:     "Analytics",
-    Title:        "FedEx Logistics Performance Analysis",
-    Metric:       "22% Cost Reduction",
-    Description:  "Optimized FedEx supply chain efficiency by identifying delivery bottlenecks and cost-saving fulfillment strategies through advanced multivariate data analysis.",
-    Tech_Stack:   "Python",
-    YouTube_Link: "https://youtu.be/-kTZhDST08I",
-    Drive_Link:   "https://drive.google.com/drive/folders/13NUZkxqE-n8Y-pcE_e7p9s9qT65dctWT",
-    GitHub_Link:  "https://github.com/Kedarlimbalkar/FedEx-Logistics-Performance-Analysis",
+    id: 9,
+    Category:     "Business",
+    Title:        "Supply Chain Health Logistics Dashboard",
+    Metric:       "Logistics Cost Optimization",
+    Description:  "Exploratory analysis and Tableau dashboard to optimize global freight routes and resolve delivery bottlenecks.",
+    Tech_Stack:   "Tableau",
+    YouTube_Link: "https://youtu.be/cPY_rdqp9nw",
+    Drive_Link:   "https://drive.google.com/drive/folders/1xwhRQvb_9rFUo7YhlaBNKQGFLReZ_cmh",
+    GitHub_Link:  "",
+    LinkedIn_Link:"",
+  },
+  {
+    id: 10,
+    Category:     "Business",
+    Title:        "Retail Demand Forecasting & Store Optimizer",
+    Metric:       "Optimized Inventory Turnover",
+    Description:  "Engineered a predictive sales engine that integrates macro-economic indicators and seasonal trends to drive data-informed inventory and staffing decisions.",
+    Tech_Stack:   "Python,XGBoost,Streamlit,Pandas,Matplotlib",
+    YouTube_Link: "https://youtu.be/2s80_Cd2yCk",
+    Drive_Link:   "https://drive.google.com/drive/folders/1q_cfpt9sK1i1Cc4jntUpZFnjmgMBZDNL",
+    GitHub_Link:  "https://github.com/Kedarlimbalkar/retail-ML",
     LinkedIn_Link:"",
   },
 ];
@@ -242,7 +317,7 @@ function ActionBtn({ icon, label, tooltip, active, activeColor, activeBg, active
 function ProjectCard({ project, T }) {
   const [hov, setHov] = useState(false);
   const tags     = (project.Tech_Stack || "").split(",").map(t => t.trim()).filter(Boolean);
-  const catColor = { ML: T.accent, Analytics: T.green, Business: T.purple }[project.Category] || T.accent;
+  const catColor = { ML: T.accent, Analytics: T.green, Business: T.purple, AI: T.pink }[project.Category] || T.accent;
   const open     = (url) => { if (url && url !== "#" && url !== "") window.open(url, "_blank", "noopener,noreferrer"); };
 
   const BTNS = [
@@ -343,7 +418,23 @@ export default function Portfolio() {
   const filtered = filter === "All" ? PROJECTS : PROJECTS.filter(p => p.Category === filter);
 
   const handleSubmit = async e => {
-    e.preventDefault(); setStatus("sending");
+    e.preventDefault();
+    const emailjsReady =
+      EMAILJS_SERVICE_ID  !== "YOUR_SERVICE_ID" &&
+      EMAILJS_TEMPLATE_ID !== "YOUR_TEMPLATE_ID" &&
+      EMAILJS_PUBLIC_KEY  !== "YOUR_PUBLIC_KEY";
+
+    if (!emailjsReady) {
+      // Fallback: open default mail client pre-filled
+      const subject = encodeURIComponent(`Portfolio Contact from ${form.name}`);
+      const body    = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\n${form.message}`);
+      window.location.href = `mailto:kedarlimbalkar@gmail.com?subject=${subject}&body=${body}`;
+      setStatus("ok");
+      setForm({ name:"", email:"", message:"" });
+      return;
+    }
+
+    setStatus("sending");
     try {
       const r = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
         method:"POST", headers:{ "Content-Type":"application/json" },
@@ -477,11 +568,10 @@ export default function Portfolio() {
                   onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                 >View Projects</button>
 
-                {/* ── CV button — opens Google Drive ── */}
+                {/* ── CV button — downloads local PDF ── */}
                 <a
-                  href="https://drive.google.com/file/d/131yKvZNlBJb-QVhssULPauhRNTi-_bRy/view?usp=sharing"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/KEDAR_DS.pdf"
+                  download="Kedar_Limbalkar_CV.pdf"
                   style={{
                     padding:"11px 28px", borderRadius:9,
                     border:`1px solid ${T.border}`, background:"none",
@@ -549,7 +639,6 @@ export default function Portfolio() {
                   With experience across data analytics, business analysis, and ML modelling, I turn
                   raw data into high-impact decisions using Python, SQL, Power BI, and Docker.
                 </p>
-                
 
               </Reveal>
 
@@ -570,9 +659,24 @@ export default function Portfolio() {
                     </div>
                   ))}
                   <div style={{ padding:"14px 18px", borderRadius:9, background:T.surface, border:`1px solid ${T.border}` }}>
-                    {["Core Technical Council 2025","Anchored Carvaan 2024","Anchored Kalasangam 2025"].map(a => (
-                      <p key={a} style={{ fontSize:12, color:T.muted, lineHeight:1.9 }}>· {a}</p>
-                    ))}
+                    <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:T.accent, marginBottom:12 }}>Activities & Leadership</p>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                      {[
+                        { label:"Core Technical Council 2025", color:T.accent },
+                        { label:"Anchored Carvaan 2024", color:T.green },
+                        { label:"Anchored Kalasangam 2025", color:T.purple },
+                      ].map(({ label, color }) => (
+                        <span key={label} style={{
+                          display:"inline-flex", alignItems:"center", gap:6,
+                          padding:"6px 12px", borderRadius:20,
+                          fontSize:11, fontWeight:600,
+                          color, border:`1px solid ${color}35`, background:`${color}12`,
+                        }}>
+                          <span style={{ width:6, height:6, borderRadius:"50%", background:color, display:"inline-block", flexShrink:0 }} />
+                          {label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </Reveal>
@@ -614,7 +718,7 @@ export default function Portfolio() {
             {/* Filter bar */}
             <Reveal delay={0.04}>
               <div style={{ display:"flex", gap:8, marginBottom:28, flexWrap:"wrap" }}>
-                {["All","ML","Analytics","Business"].map(f => (
+                {["All","ML","AI","Analytics","Business"].map(f => (
                   <button key={f} onClick={() => setFilter(f)} style={{
                     padding:"6px 16px", borderRadius:7, fontSize:12, fontWeight:600,
                     border:`1px solid ${filter === f ? T.accent : T.border}`,
