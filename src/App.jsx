@@ -765,9 +765,10 @@ export default function Portfolio() {
             <Rule T={T} />
             <Reveal><SLabel T={T}>Contact</SLabel><H2 T={T}>Get in Touch</H2></Reveal>
             <Reveal delay={0.05}>
-              <p style={{ color:T.muted, fontSize:14, lineHeight:1.75, marginBottom:28 }}>
+              <p style={{ color:T.muted, fontSize:14, lineHeight:1.75, marginBottom:16 }}>
                 Open to entry-level roles in ML Engineering, Data Science & Business Analytics.
               </p>
+              
               <form onSubmit={handleSubmit}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
                   <input type="text" placeholder="Name" required value={form.name}
@@ -821,6 +822,7 @@ export default function Portfolio() {
                 ["LinkedIn","https://www.linkedin.com/in/kedar-limbalkar/"],
                 ["GitHub",  "https://github.com/kedarlimbalkar"],
                 ["Email",   "mailto:kedarlimbalkar@gmail.com"],
+                ["Phone",   "tel:9284374129"],
               ].map(([l, u]) => (
                 <a key={l} href={u} target="_blank" rel="noopener noreferrer"
                   style={{ color:T.muted, fontSize:12, fontWeight:500, textDecoration:"none", transition:"color .18s" }}
