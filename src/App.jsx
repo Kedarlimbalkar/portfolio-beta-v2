@@ -577,7 +577,7 @@ export default function Portfolio() {
 
                 {/* ── CV button — downloads local PDF ── */}
                 <a
-                  href="/KEDAR_DS.pdf"
+                  href="/Kedar_Limbalkar_DS.pdf"
                   download="Kedar_Limbalkar_CV.pdf"
                   style={{
                     padding:"11px 28px", borderRadius:9,
