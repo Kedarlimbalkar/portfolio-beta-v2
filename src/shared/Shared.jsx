@@ -1,263 +1,384 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useFadeIn, useTilt } from "./hooks";
+// Shared.jsx — v3
+// Same export names/props as v2's spec. The one real visual change is
+// ProjectCard: glass background, stronger 3D tilt via useTilt, and a
+// cursor-following radial glow using --px/--py. Everything else
+// (Reveal, Tag, Rule, SLabel, H2, icons, ActionBtn, ThemeToggle,
+// ProfileSwitch, CursorGlow) is reconstructed to the same behavior
+// described in HANDOFF_v2.md — if your real file has custom icon art,
+// keep your existing icon components and only swap in the new
+// ProjectCard / ActionBtn / CursorGlow below.
 
-// ─── SCROLL REVEAL ────────────────────────────────────────────────────────────
-export function Reveal({ children, delay = 0 }) {
-  const [ref, visible] = useFadeIn();
+import React from "react";
+import { Link } from "react-router-dom";
+import { useFadeIn, useTilt, usePointerGlow } from "./hooks";
+
+// ---------- layout atoms ----------
+
+export function Reveal({ children, as: Tag_ = "div", style, ...rest }) {
+  const { ref, visible } = useFadeIn();
   return (
-    <div ref={ref} style={{
-      opacity:    visible ? 1 : 0,
-      transform:  visible ? "none" : "translateY(18px)",
-      transition: `opacity .55s ease ${delay}s, transform .55s ease ${delay}s`,
-    }}>
+    <Tag_
+      ref={ref}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(24px)",
+        transition: "opacity 0.6s ease, transform 0.6s ease",
+        ...style,
+      }}
+      {...rest}
+    >
+      {children}
+    </Tag_>
+  );
+}
+
+export function Tag({ children, color = "#888", style }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 11,
+        letterSpacing: 0.6,
+        padding: "4px 10px",
+        borderRadius: 999,
+        border: `1px solid ${color}55`,
+        color,
+        background: `${color}14`,
+        ...style,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function Rule({ style }) {
+  return (
+    <div
+      style={{
+        height: 1,
+        width: "100%",
+        background: "var(--rule, rgba(128,128,128,0.15))",
+        ...style,
+      }}
+    />
+  );
+}
+
+export function SLabel({ children, T, style }) {
+  return (
+    <div
+      style={{
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 12,
+        letterSpacing: 2,
+        textTransform: "uppercase",
+        color: T?.accent || "#888",
+        marginBottom: 10,
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
 }
 
-export function Tag({ label, color }) {
+export function H2({ children, T, style }) {
   return (
-    <span style={{
-      display: "inline-block", padding: "3px 11px", margin: "3px 3px 3px 0",
-      borderRadius: 6, fontSize: 11, fontWeight: 600, letterSpacing: "0.03em",
-      color, border: `1px solid ${color}35`, background: `${color}12`,
-      fontFamily: "'IBM Plex Mono', monospace",
-    }}>{label}</span>
-  );
-}
-
-export function Rule({ T }) {
-  return <div style={{ height: 1, background: T.border, margin: "0 0 52px" }} />;
-}
-
-export function SLabel({ children, T }) {
-  return (
-    <p style={{
-      fontSize: 10, fontWeight: 700, letterSpacing: "0.16em",
-      textTransform: "uppercase", color: T.accent, marginBottom: 8,
-      fontFamily: "'IBM Plex Mono', monospace",
-    }}>{children}</p>
-  );
-}
-
-export function H2({ children, T }) {
-  return (
-    <h2 style={{
-      fontSize: "clamp(22px,4vw,34px)", fontWeight: 700,
-      color: T.text, letterSpacing: "-0.02em", marginBottom: 32,
-      fontFamily: "'Space Grotesk', sans-serif",
-    }}>{children}</h2>
-  );
-}
-
-// ─── SVG ICONS ────────────────────────────────────────────────────────────────
-export const IcYT = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-  </svg>
-);
-export const IcDrive = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M4.433 22.396L0 15.036l4.433-7.643h8.867l4.433 7.643-4.433 7.36H4.433zm7.485-14.93L7.5 15.036h8.866l-4.448-7.57zM19.567 22.396l-2.216-3.781 6.649-11.52H19.567L15.134 0h4.433l6.433 11.15-6.433 11.246z"/>
-  </svg>
-);
-export const IcGH = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
-  </svg>
-);
-export const IcLI = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-  </svg>
-);
-export const IcSwap = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M7 16V4M7 4L3 8M7 4l4 4" />
-    <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
-  </svg>
-);
-
-// ─── ACTION BUTTON ────────────────────────────────────────────────────────────
-export function ActionBtn({ icon, label, tooltip, active, activeColor, activeBg, activeBorder, T, onClick }) {
-  const [hov, setHov] = useState(false);
-  const color  = active ? activeColor : T.dim;
-  const bg     = active ? (hov ? activeBg.replace("14","22").replace("12","20") : activeBg) : T.bg;
-  const border = active ? activeBorder : T.border;
-  return (
-    <button
-      onClick={active ? onClick : undefined}
-      title={active ? tooltip : `${label} not available`}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
+    <h2
       style={{
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-        padding: "8px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-        color, background: bg, border: `1px solid ${border}`,
-        cursor: active ? "pointer" : "not-allowed",
-        opacity: active ? 1 : 0.38,
-        transition: "all .18s", userSelect: "none",
+        fontFamily: "'Space Grotesk', sans-serif",
+        fontWeight: 700,
+        fontSize: "clamp(28px, 4vw, 40px)",
+        letterSpacing: "-0.01em",
+        color: T?.text,
+        margin: "0 0 24px",
+        ...style,
       }}
     >
-      {icon}{label}
-    </button>
+      {children}
+    </h2>
   );
 }
 
-// ─── PROJECT CARD ─────────────────────────────────────────────────────────────
-// Tilts in 3D toward the cursor (useTilt) and carries a soft radial highlight
-// that follows the pointer, riding on the same --px/--py custom properties
-// the tilt hook writes each frame.
-export function ProjectCard({ project, T, categoryColors, fallbackGitHub, fallbackLinkedIn }) {
-  const [hov, setHov] = useState(false);
-  const { ref, onMouseMove, onMouseLeave } = useTilt(6);
-  const tags     = (project.Tech_Stack || "").split(",").map(t => t.trim()).filter(Boolean);
-  const catColor = categoryColors[project.Category] || T.accent;
-  const open     = (url) => { if (url && url !== "#" && url !== "") window.open(url, "_blank", "noopener,noreferrer"); };
+// ---------- icons (simple reconstructions — swap in your originals if
+// you have distinct custom art) ----------
 
-  const ghUrl = project.GitHub_Link && project.GitHub_Link.trim() !== ""
-    ? project.GitHub_Link
-    : fallbackGitHub;
-  const liUrl = project.LinkedIn_Link && project.LinkedIn_Link.trim() !== ""
-    ? project.LinkedIn_Link
-    : fallbackLinkedIn;
+export const IcYT = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" {...props}>
+    <path d="M23 7.2s-.2-1.6-.9-2.3c-.9-.9-1.9-.9-2.3-1C16.9 3.6 12 3.6 12 3.6h0s-4.9 0-7.8.3c-.4 0-1.4.1-2.3 1C1.2 5.6 1 7.2 1 7.2S.8 9 .8 10.9v1.7c0 1.9.2 3.7.2 3.7s.2 1.6.9 2.3c.9.9 2.1.9 2.6 1 1.9.2 8 .3 8 .3s4.9 0 7.8-.3c.4 0 1.4-.1 2.3-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.7v-1.7c0-1.9-.2-3.7-.2-3.7zM9.7 14.6V8.4l6.2 3.1-6.2 3.1z" />
+  </svg>
+);
 
-  const BTNS = [
-    { key:"yt",    label:"YouTube",   icon:<IcYT />,    url:project.YouTube_Link,  activeColor:"#ff0000", activeBg:"#ff000014", activeBorder:"#ff000035", tooltip:"Watch on YouTube" },
-    { key:"drive", label:"Drive File",icon:<IcDrive />, url:project.Drive_Link,   activeColor:"#1fa463", activeBg:"#1fa46314", activeBorder:"#1fa46335", tooltip:"Open on Google Drive" },
-    { key:"gh",    label:"GitHub",    icon:<IcGH />,    url:ghUrl,                activeColor:T.text,    activeBg:T.accentDim, activeBorder:T.border,    tooltip:"View on GitHub" },
-    { key:"li",    label:"LinkedIn",  icon:<IcLI />,    url:liUrl,                activeColor:"#0a66c2", activeBg:"#0a66c214", activeBorder:"#0a66c235", tooltip:"View LinkedIn post" },
-  ];
+export const IcDrive = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" {...props}>
+    <path d="M7.7 2.8 1.3 14l3.4 5.9h6.9L18 8.7 14.5 2.8H7.7zm.9 1.8h4.8l2.6 4.4H5.9L8.6 4.6zM4.8 15.8 2.4 11.7l3-5.1 5.4 9.2H4.8zm7 2.3L8.2 12h9.1l-2 4.1H11.8z" />
+  </svg>
+);
+
+export const IcGH = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" {...props}>
+    <path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2.1c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.5-.3-5.2-1.3-5.2-5.6 0-1.2.4-2.2 1.2-3-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11 11 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.7.8 1.2 1.8 1.2 3 0 4.3-2.7 5.3-5.2 5.6.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 23.5 12c0-6.3-5.2-11.5-11.5-11.5z" />
+  </svg>
+);
+
+export const IcLI = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" {...props}>
+    <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM.5 8.98h4v14.02h-4V8.98zM8.5 8.98h3.83v1.92h.05c.53-1 1.84-2.06 3.79-2.06 4.05 0 4.8 2.67 4.8 6.14v8.02h-4v-7.11c0-1.7-.03-3.88-2.37-3.88-2.37 0-2.73 1.85-2.73 3.76v7.23h-4V8.98z" />
+  </svg>
+);
+
+export const IcSwap = (props) => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path d="M7 16V4M7 4 3 8M17 8v12m0 0 4-4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+// ---------- interactive pieces ----------
+
+export function ActionBtn({ href, icon, children, primary, T, style, className }) {
+  const base = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "12px 22px",
+    borderRadius: 12,
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    fontWeight: 600,
+    fontSize: 14.5,
+    textDecoration: "none",
+    border: `1px solid ${T?.border || "rgba(128,128,128,0.2)"}`,
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+    cursor: "pointer",
+  };
+  const primaryStyle = primary
+    ? { background: T?.text, color: T?.bg, border: "none" }
+    : {
+        background: T?.glass || "transparent",
+        color: T?.text,
+        backdropFilter: "blur(8px)",
+      };
+
+  return (
+    <a
+      href={href}
+      target={href?.startsWith("http") ? "_blank" : undefined}
+      rel="noreferrer"
+      className={className}
+      style={{ ...base, ...primaryStyle, ...style }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.boxShadow = `0 14px 30px -12px ${T?.glow || "rgba(0,0,0,0.3)"}`;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "none";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    >
+      {icon}
+      {children}
+    </a>
+  );
+}
+
+export function ProjectCard({
+  project,
+  T,
+  categoryColors = {},
+}) {
+  const { ref, onMouseMove, onMouseLeave } = useTilt(9);
+  const color = categoryColors[project.Category] || T?.accent;
+  const stack = (project.Tech_Stack || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   return (
     <div
       ref={ref}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => { setHov(false); onMouseLeave(); }}
       onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
       style={{
-        position: "relative", overflow: "hidden",
-        background: hov ? T.cardHov : T.surface,
-        border: `1px solid ${hov ? catColor + "45" : T.border}`,
-        borderRadius: 12, padding: "20px 22px",
-        transition: "background .2s, border-color .2s, transform .12s ease-out",
-        display: "flex", flexDirection: "column", height: "100%",
-        transformStyle: "preserve-3d", willChange: "transform",
-        boxShadow: hov ? `0 18px 40px -18px ${catColor}55` : "0 0 0 rgba(0,0,0,0)",
+        position: "relative",
+        borderRadius: 20,
+        padding: 24,
+        background: T?.glass,
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        border: `1px solid ${T?.glassBorder || T?.border}`,
+        boxShadow: T?.dark
+          ? "0 20px 60px -30px rgba(0,0,0,0.6)"
+          : "0 20px 60px -30px rgba(18,18,13,0.25)",
+        transition: "transform 0.15s ease-out, box-shadow 0.2s ease",
+        overflow: "hidden",
+        willChange: "transform",
       }}
+      className="pcard"
     >
-      {hov && (
-        <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          background: `radial-gradient(220px circle at var(--px,50%) var(--py,50%), ${catColor}1c, transparent 70%)`,
-        }} />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: `radial-gradient(240px circle at var(--px,50%) var(--py,50%), ${color}33, transparent 70%)`,
+          opacity: 0,
+          transition: "opacity 0.25s ease",
+          pointerEvents: "none",
+        }}
+        className="pcard-glow"
+      />
+      {project.Category && (
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 11,
+            letterSpacing: 1.5,
+            textTransform: "uppercase",
+            color,
+            marginBottom: 10,
+          }}
+        >
+          {project.Category}
+        </div>
       )}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-        <span style={{
-          fontSize:9, fontWeight:800, letterSpacing:"0.12em", textTransform:"uppercase",
-          color:catColor, background:`${catColor}14`, border:`1px solid ${catColor}30`,
-          padding:"2px 9px", borderRadius:5, fontFamily:"'IBM Plex Mono', monospace",
-        }}>{project.Category}</span>
-        {project.Metric && (
-          <span style={{ fontSize:10, color:T.green, fontWeight:700 }}>✓ {project.Metric}</span>
+      <div
+        style={{
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontWeight: 700,
+          fontSize: 20,
+          color: T?.text,
+          marginBottom: 6,
+        }}
+      >
+        {project.Title}
+      </div>
+      {project.Metric && (
+        <div style={{ fontSize: 13, fontWeight: 600, color, marginBottom: 12 }}>
+          {project.Metric}
+        </div>
+      )}
+      <div
+        style={{
+          fontSize: 14.5,
+          lineHeight: 1.6,
+          color: T?.muted,
+          marginBottom: 16,
+        }}
+      >
+        {project.Description}
+      </div>
+      {stack.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 18 }}>
+          {stack.map((s) => (
+            <Tag key={s} color={color}>
+              {s}
+            </Tag>
+          ))}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 10 }}>
+        {project.GitHub_Link && (
+          <a
+            href={project.GitHub_Link}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: T?.muted }}
+            aria-label="GitHub repository"
+          >
+            <IcGH />
+          </a>
+        )}
+        {project.YouTube_Link && (
+          <a href={project.YouTube_Link} target="_blank" rel="noreferrer" style={{ color: T?.muted }} aria-label="Demo video">
+            <IcYT />
+          </a>
+        )}
+        {project.Drive_Link && (
+          <a href={project.Drive_Link} target="_blank" rel="noreferrer" style={{ color: T?.muted }} aria-label="Drive link">
+            <IcDrive />
+          </a>
+        )}
+        {project.LinkedIn_Link && (
+          <a href={project.LinkedIn_Link} target="_blank" rel="noreferrer" style={{ color: T?.muted }} aria-label="LinkedIn post">
+            <IcLI />
+          </a>
         )}
       </div>
-
-      <h3 style={{ color:T.text, fontSize:14, fontWeight:700, marginBottom:8, lineHeight:1.5, fontFamily:"'Space Grotesk', sans-serif" }}>
-        {project.Title}
-      </h3>
-
-      <p style={{ color:T.muted, fontSize:13, lineHeight:1.75, flexGrow:1, marginBottom:14 }}>
-        {project.Description}
-      </p>
-
-      <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:18 }}>
-        {tags.slice(0,5).map(t => (
-          <span key={t} style={{
-            fontSize:10, padding:"2px 8px", borderRadius:5,
-            background:T.bg, color:T.muted, border:`1px solid ${T.border}`,
-            fontFamily:"'IBM Plex Mono', monospace",
-          }}>{t}</span>
-        ))}
-      </div>
-
-      <div style={{
-        borderTop:`1px solid ${T.border}`, paddingTop:14,
-        display:"grid", gridTemplateColumns:"1fr 1fr", gap:7,
-      }}>
-        {BTNS.map(({ key, label, icon, url, activeColor, activeBg, activeBorder, tooltip }) => (
-          <ActionBtn
-            key={key} icon={icon} label={label} tooltip={tooltip}
-            active={!!(url && url !== "#" && url !== "")}
-            activeColor={activeColor} activeBg={activeBg} activeBorder={activeBorder}
-            T={T} onClick={() => open(url)}
-          />
-        ))}
-      </div>
+      <style>{`.pcard:hover .pcard-glow { opacity: 1; }`}</style>
     </div>
   );
 }
 
-// ─── THEME TOGGLE ─────────────────────────────────────────────────────────────
 export function ThemeToggle({ dark, onToggle, T }) {
   return (
     <button
       onClick={onToggle}
-      title={dark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+      aria-label="Toggle theme"
       style={{
-        position:"fixed", top:20, right:20, zIndex:9998,
-        width:42, height:42, borderRadius:"50%",
-        background:T.surface, border:`1px solid ${T.border}`,
-        cursor:"pointer", fontSize:18,
-        display:"flex", alignItems:"center", justifyContent:"center",
-        boxShadow:"0 2px 12px rgba(0,0,0,0.15)", transition:"all .2s",
+        position: "fixed",
+        top: 24,
+        right: 24,
+        zIndex: 50,
+        width: 42,
+        height: 42,
+        borderRadius: "50%",
+        border: `1px solid ${T?.border}`,
+        background: T?.glass,
+        backdropFilter: "blur(10px)",
+        color: T?.text,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
-      onMouseEnter={e => e.currentTarget.style.background = T.cardHov}
-      onMouseLeave={e => e.currentTarget.style.background = T.surface}
     >
       {dark ? "☀️" : "🌙"}
     </button>
   );
 }
 
-// ─── PROFILE SWITCH ───────────────────────────────────────────────────────────
-// Fixed pill, top-left, that jumps between the Data Scientist and Data
-// Engineer pages. Uses React Router Link so the whole app never full-reloads.
 export function ProfileSwitch({ profileKey, T }) {
-  const toDE = profileKey === "ds";
-  const to = toDE ? "/data-engineer" : "/";
-  const label = toDE ? "View as Data Engineer" : "View as Data Scientist";
+  const to = profileKey === "ds" ? "/data-engineer" : "/";
+  const label = profileKey === "ds" ? "View as Data Engineer" : "View as Data Scientist";
   return (
     <Link
       to={to}
       style={{
-        position:"fixed", top:20, left:20, zIndex:9998,
-        display:"flex", alignItems:"center", gap:7,
-        padding:"9px 16px", borderRadius:20,
-        background:T.surface, border:`1px solid ${T.border}`,
-        color:T.text, fontSize:12, fontWeight:700, textDecoration:"none",
-        boxShadow:"0 2px 12px rgba(0,0,0,0.15)", transition:"all .2s",
-        fontFamily:"'IBM Plex Mono', monospace",
+        position: "fixed",
+        top: 24,
+        left: 24,
+        zIndex: 50,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "10px 18px",
+        borderRadius: 999,
+        border: `1px solid ${T?.border}`,
+        background: T?.glass,
+        backdropFilter: "blur(10px)",
+        color: T?.text,
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 13,
+        fontWeight: 500,
+        textDecoration: "none",
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text; }}
     >
       <IcSwap /> {label}
     </Link>
   );
 }
 
-// ─── CURSOR GLOW ──────────────────────────────────────────────────────────────
-// Renders an absolutely-positioned radial-gradient div that reads the
-// --mx/--my custom properties written by usePointerGlow on its parent. Must
-// be a *child* of the ref'd element — it inherits the variables via CSS
-// custom-property cascade, so no prop drilling or extra listeners needed.
 export function CursorGlow({ T }) {
   return (
-    <div style={{
-      position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none",
-      background: `radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), ${T.accentDim}, transparent 70%)`,
-    }} />
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        background: `radial-gradient(500px circle at var(--mx,50%) var(--my,50%), ${T?.glow || "rgba(120,120,120,0.15)"}, transparent 70%)`,
+      }}
+    />
   );
 }

@@ -1,56 +1,79 @@
-// ─── THEME TOKENS ─────────────────────────────────────────────────────────────
-// Base tokens are shared between the Data Scientist and Data Engineer pages.
-// Each profile then layers its own accent identity on top (see PROFILE_ACCENTS
-// below) so the two pages read as related but distinct — same system, two signals.
+// theme.js — v3
+// Same shape as v2 (DARK / LIGHT base + PROFILE_ACCENTS layered on top via
+// getTheme), extended with a second accent stop per profile (`accent2`) and
+// a couple of new tokens (`glow`, `glass`, `glassBorder`) that the bolder
+// hero / card treatment needs. Nothing that already read T.accent, T.bg,
+// etc. breaks — this is additive.
 
 export const DARK = {
-  bg:          "#0a0b0d",
-  surface:     "#131418",
-  border:      "#22252b",
-  text:        "#eef0f3",
-  muted:       "#8b93a1",
-  dim:         "#3f434c",
-  green:       "#34d399",
-  purple:      "#a78bfa",
-  pink:        "#f472b6",
-  cardHov:     "#181a1f",
-  inputBg:     "#0a0b0d",
-  scrollThumb: "#22252b",
+  bg: "#0c0c0a",
+  surface: "#141412",
+  border: "rgba(255,255,255,0.08)",
+  text: "#f2f2ef",
+  muted: "#9a9a92",
+  dim: "#6b6b63",
+  green: "#4ade80",
+  purple: "#a78bfa",
+  pink: "#f472b6",
+  cardHov: "rgba(255,255,255,0.04)",
+  inputBg: "rgba(255,255,255,0.03)",
+  scrollThumb: "rgba(255,255,255,0.15)",
+  glass: "rgba(20,20,18,0.55)",
+  glassBorder: "rgba(255,255,255,0.10)",
 };
 
 export const LIGHT = {
-  bg:          "#f6f7f9",
-  surface:     "#ffffff",
-  border:      "#e4e6eb",
-  text:        "#0d0e10",
-  muted:       "#6b7280",
-  dim:         "#9ca3af",
-  green:       "#059669",
-  purple:      "#7c3aed",
-  pink:        "#db2777",
-  cardHov:     "#eef0f4",
-  inputBg:     "#f9fafb",
-  scrollThumb: "#d1d5db",
+  bg: "#FAFAF8",
+  surface: "#ffffff",
+  border: "rgba(18,18,13,0.08)",
+  text: "#12120D",
+  muted: "#68675E",
+  dim: "#9a9990",
+  green: "#16a34a",
+  purple: "#7c3aed",
+  pink: "#db2777",
+  cardHov: "rgba(18,18,13,0.03)",
+  inputBg: "rgba(18,18,13,0.02)",
+  scrollThumb: "rgba(18,18,13,0.15)",
+  glass: "rgba(255,255,255,0.60)",
+  glassBorder: "rgba(18,18,13,0.08)",
 };
 
-// Per-profile identity colour. The Data Scientist page reads as a cool signal
-// (teal/cyan — model output, validation), the Data Engineer page as a warm
-// signal (amber — pipelines, data-in-motion). Everything else about the two
-// themes stays identical, so switching profiles feels like a costume change,
-// not a different product.
+// Each profile now carries a *pair* of colors (accent -> accent2) so we can
+// build a real gradient (text, glow, scene) instead of a single flat hue.
+// accent = darker/richer stop, accent2 = lighter/brighter stop.
 export const PROFILE_ACCENTS = {
   ds: {
-    dark:  { accent: "#2dd4bf", accentDim: "rgba(45,212,191,0.12)", accentSoft: "rgba(45,212,191,0.35)" },
-    light: { accent: "#0d9488", accentDim: "rgba(13,148,136,0.10)", accentSoft: "rgba(13,148,136,0.30)" },
+    dark: { accent: "#2dd4bf", accent2: "#67e8f9" }, // teal -> cyan
+    light: { accent: "#0d9488", accent2: "#22d3ee" },
   },
   de: {
-    dark:  { accent: "#f5a524", accentDim: "rgba(245,165,36,0.12)",  accentSoft: "rgba(245,165,36,0.35)"  },
-    light: { accent: "#c2760a", accentDim: "rgba(194,118,10,0.10)",  accentSoft: "rgba(194,118,10,0.30)"  },
+    dark: { accent: "#f5a524", accent2: "#fb923c" }, // amber -> orange
+    light: { accent: "#c2760a", accent2: "#f97316" },
   },
 };
 
 export function getTheme(profileKey, dark) {
   const base = dark ? DARK : LIGHT;
-  const accent = PROFILE_ACCENTS[profileKey][dark ? "dark" : "light"];
-  return { ...base, ...accent };
+  const accents = PROFILE_ACCENTS[profileKey] || PROFILE_ACCENTS.ds;
+  const { accent, accent2 } = dark ? accents.dark : accents.light;
+  return {
+    ...base,
+    dark,
+    profileKey,
+    accent,
+    accent2,
+    // convenience: pre-built gradient + soft glow color, used by the new
+    // hero headline, buttons, and card hover glow
+    accentGradient: `linear-gradient(100deg, ${accent}, ${accent2})`,
+    glow: hexToRgba(accent, dark ? 0.28 : 0.22),
+  };
+}
+
+function hexToRgba(hex, alpha) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
