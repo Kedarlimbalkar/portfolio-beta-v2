@@ -1,10 +1,15 @@
-// ProfilePage.jsx — v4
-// Rewritten against the REAL src/data/dataScientist.js (user pasted it in
-// chat). Field shapes below are copied exactly from that file — if
-// dataEngineer.js uses a different shape for any of these, tell me and
-// I'll branch it; the assumption is DE mirrors DS's shape.
+// ProfilePage.jsx — v5
+// v4 -> v5 changes (both requested by user, both use only real existing
+// props — nothing invented):
+//   1. ABOUT section is now a 2-column layout on wider screens: bio +
+//      education cards stay on the left (unchanged), a new "Quick facts"
+//      card + "Top skills" preview card sit on the right, vertically
+//      aligned beside the education cards. Falls back to a single column
+//      on narrow screens via auto-fit-style minmax grid.
+//   2. EXPERIENCE section cards now render in a 2-column grid instead of
+//      a single stacked column (falls back to 1 column on narrow screens).
 //
-// Real shapes used here:
+// Real shapes used here (unchanged from v4):
 //   NAV            [{ id, label }]              ids: hero/about/skills/projects/experience/contact
 //   HERO_EYEBROW   string
 //   HERO_TAGLINE   [line1, line2]                <- the big two-line name, NOT a sentence
@@ -78,6 +83,13 @@ export default function ProfilePage({
   const filters = PROJECT_FILTERS.includes("All")
     ? PROJECT_FILTERS
     : ["All", ...PROJECT_FILTERS];
+
+  // Flatten SKILLS object map into a single preview list for the About
+  // section's "Top skills" card — first 6 skills across all categories,
+  // plus a "+N more" count pointing at the full Skills section.
+  const allSkills = Object.values(SKILLS).flat();
+  const previewSkills = allSkills.slice(0, 6);
+  const remainingSkillsCount = Math.max(allSkills.length - previewSkills.length, 0);
 
   return (
     <div style={{ background: T.bg, color: T.text, minHeight: "100vh" }}>
@@ -209,32 +221,138 @@ export default function ProfilePage({
 
       {/* ---------------- ABOUT ---------------- */}
       {ABOUT_PARAGRAPHS.length > 0 && (
-        <section id="about" style={{ padding: "60px clamp(24px, 6vw, 72px)", maxWidth: 820 }}>
-          <Reveal>
-            <SLabel T={T}>About</SLabel>
-            <H2 T={T}>Background</H2>
-            {ABOUT_PARAGRAPHS.map((p, i) => (
-              <p key={i} style={{ color: T.muted, lineHeight: 1.75, marginBottom: 16 }}>
-                {p}
-              </p>
-            ))}
-          </Reveal>
+        <section id="about" style={{ padding: "60px clamp(24px, 6vw, 72px)", maxWidth: 1080, margin: "0 auto" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1.4fr) minmax(260px, 1fr)",
+              gap: 40,
+              alignItems: "start",
+            }}
+            className="about-grid"
+          >
+            {/* ----- Left column: bio + education (unchanged) ----- */}
+            <div>
+              <Reveal>
+                <SLabel T={T}>About</SLabel>
+                <H2 T={T}>Background</H2>
+                {ABOUT_PARAGRAPHS.map((p, i) => (
+                  <p key={i} style={{ color: T.muted, lineHeight: 1.75, marginBottom: 16 }}>
+                    {p}
+                  </p>
+                ))}
+              </Reveal>
 
-          {EDUCATION.length > 0 && (
-            <div style={{ marginTop: 40, display: "grid", gap: 16 }}>
-              {EDUCATION.map((e, i) => (
-                <Reveal key={i} className={`anim-${(i % 4) + 1}`}>
+              {EDUCATION.length > 0 && (
+                <div style={{ marginTop: 40, display: "grid", gap: 16 }}>
+                  {EDUCATION.map((e, i) => (
+                    <Reveal key={i} className={`anim-${(i % 4) + 1}`}>
+                      <div className="glass" style={{ borderRadius: 16, padding: 20 }}>
+                        <Tag color={colorMap[e.colorKey] || T.accent}>{e.period}</Tag>
+                        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17, marginTop: 10 }}>
+                          {e.deg}
+                        </div>
+                        <div style={{ color: T.muted, fontSize: 14 }}>{e.school}</div>
+                      </div>
+                    </Reveal>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ----- Right column: quick facts + top skills ----- */}
+            <div style={{ display: "grid", gap: 16, marginTop: 4 }}>
+              {(HERO_STATS.length > 0 || CONTACT_LINE || EXPERIENCE.length > 0) && (
+                <Reveal className="anim-1">
                   <div className="glass" style={{ borderRadius: 16, padding: 20 }}>
-                    <Tag color={colorMap[e.colorKey] || T.accent}>{e.period}</Tag>
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17, marginTop: 10 }}>
-                      {e.deg}
+                    <div
+                      className="mono"
+                      style={{ fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase", color: T.muted, marginBottom: 16 }}
+                    >
+                      Quick facts
                     </div>
-                    <div style={{ color: T.muted, fontSize: 14 }}>{e.school}</div>
+
+                    {CONTACT_LINE && (
+                      <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                        <div style={{ width: 4, borderRadius: 2, background: T.accent, flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontSize: 11, color: T.muted, marginBottom: 2 }}>Status</div>
+                          <div style={{ fontSize: 14, lineHeight: 1.4 }}>{CONTACT_LINE}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {EDUCATION.length > 0 && (
+                      <div style={{ display: "flex", gap: 10, marginBottom: HERO_STATS.length > 0 ? 18 : 0 }}>
+                        <div style={{ width: 4, borderRadius: 2, background: T.green || T.accent, flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontSize: 11, color: T.muted, marginBottom: 2 }}>Currently</div>
+                          <div style={{ fontSize: 14, lineHeight: 1.4 }}>{EDUCATION[0].deg} · {EDUCATION[0].school}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {HERO_STATS.length > 0 && (
+                      <div
+                        style={{
+                          borderTop: `1px solid ${T.border}`,
+                          paddingTop: 16,
+                          display: "grid",
+                          gridTemplateColumns: "repeat(2, 1fr)",
+                          gap: 12,
+                        }}
+                      >
+                        {HERO_STATS.map(([value, label], i) => (
+                          <div key={i} style={{ textAlign: "center" }}>
+                            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 20 }}>
+                              {value}
+                            </div>
+                            <div style={{ fontSize: 11, color: T.muted }}>{label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </Reveal>
-              ))}
+              )}
+
+              {previewSkills.length > 0 && (
+                <Reveal className="anim-2">
+                  <div className="glass" style={{ borderRadius: 16, padding: 20 }}>
+                    <div
+                      className="mono"
+                      style={{ fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase", color: T.muted, marginBottom: 14 }}
+                    >
+                      Top skills
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {previewSkills.map((s) => (
+                        <Tag key={s} color={T.accent}>
+                          {s}
+                        </Tag>
+                      ))}
+                      {remainingSkillsCount > 0 && (
+                        <a
+                          href="#skills"
+                          className="mono"
+                          style={{
+                            fontSize: 12,
+                            padding: "5px 12px",
+                            borderRadius: 999,
+                            color: T.muted,
+                            border: `1px solid ${T.border}`,
+                            textDecoration: "none",
+                          }}
+                        >
+                          +{remainingSkillsCount} more
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </Reveal>
+              )}
             </div>
-          )}
+          </div>
         </section>
       )}
 
@@ -309,33 +427,42 @@ export default function ProfilePage({
 
       {/* ---------------- EXPERIENCE ---------------- */}
       {EXPERIENCE.length > 0 && (
-        <section id="experience" style={{ padding: "40px clamp(24px, 6vw, 72px)", maxWidth: 820 }}>
+        <section id="experience" style={{ padding: "40px clamp(24px, 6vw, 72px)", maxWidth: 1080, margin: "0 auto" }}>
           <Reveal>
             <SLabel T={T}>Experience</SLabel>
             <H2 T={T}>Where I've worked</H2>
           </Reveal>
-          <div style={{ display: "grid", gap: 16 }}>
+          <div
+            style={
+              EXPERIENCE.length === 1
+                ? { display: "flex", justifyContent: "center" }
+                : { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16 }
+            }
+            className="experience-grid"
+          >
             {EXPERIENCE.map((e, i) => (
-              <Reveal key={i} className={`anim-${(i % 4) + 1}`}>
-                <div className="glass" style={{ borderRadius: 16, padding: 22 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17 }}>
-                      {e.role}
+              <div key={i} style={EXPERIENCE.length === 1 ? { width: "100%", maxWidth: 560 } : undefined}>
+                <Reveal className={`anim-${(i % 4) + 1}`}>
+                  <div className="glass" style={{ borderRadius: 16, padding: 22, height: "100%" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17 }}>
+                        {e.role}
+                      </div>
+                      <Tag color={colorMap[e.colorKey] || T.accent}>{e.period}</Tag>
                     </div>
-                    <Tag color={colorMap[e.colorKey] || T.accent}>{e.period}</Tag>
+                    <div style={{ color: T.muted, fontSize: 14, marginTop: 4, marginBottom: 10 }}>
+                      {e.company}
+                    </div>
+                    {Array.isArray(e.points) && e.points.length > 0 && (
+                      <ul style={{ margin: 0, paddingLeft: 18, color: T.muted, lineHeight: 1.65, fontSize: 14.5 }}>
+                        {e.points.map((pt, j) => (
+                          <li key={j}>{pt}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  <div style={{ color: T.muted, fontSize: 14, marginTop: 4, marginBottom: 10 }}>
-                    {e.company}
-                  </div>
-                  {Array.isArray(e.points) && e.points.length > 0 && (
-                    <ul style={{ margin: 0, paddingLeft: 18, color: T.muted, lineHeight: 1.65, fontSize: 14.5 }}>
-                      {e.points.map((pt, j) => (
-                        <li key={j}>{pt}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </Reveal>
+                </Reveal>
+              </div>
             ))}
           </div>
         </section>
@@ -357,6 +484,18 @@ export default function ProfilePage({
           </ActionBtn>
         </Reveal>
       </section>
+
+      {/* v5: responsive fallback — collapse About's 2-column grid to a
+          single column on narrow viewports, since inline styles can't
+          hold media queries. Experience grid already auto-fits via
+          minmax and doesn't need this. */}
+      <style>{`
+        @media (max-width: 780px) {
+          .about-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
