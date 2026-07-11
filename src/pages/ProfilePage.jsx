@@ -1,13 +1,21 @@
-// ProfilePage.jsx — v3
-// Same contract as v2: <ProfilePage profileKey="ds"|"de" photoSrc={...} {...DS|DE} />
-// where DS/DE are the named exports from src/data/dataScientist.js /
-// dataEngineer.js (unchanged this round — see HANDOFF_v3.md).
+// ProfilePage.jsx — v4
+// Rewritten against the REAL src/data/dataScientist.js (user pasted it in
+// chat). Field shapes below are copied exactly from that file — if
+// dataEngineer.js uses a different shape for any of these, tell me and
+// I'll branch it; the assumption is DE mirrors DS's shape.
 //
-// What changed vs v2: the hero is now the bold, asymmetric, large-type
-// layout previewed in chat — headline up to ~96px, gradient on the
-// surname, NeuralField given real stage space instead of being a faint
-// wallpaper. Section chrome (About/Skills/Projects/Experience/Contact)
-// reconstructed to consume the same prop names v2 described.
+// Real shapes used here:
+//   NAV            [{ id, label }]              ids: hero/about/skills/projects/experience/contact
+//   HERO_EYEBROW   string
+//   HERO_TAGLINE   [line1, line2]                <- the big two-line name, NOT a sentence
+//   HERO_SUB       string                        <- the actual tagline sentence
+//   HERO_STATS     [[value, label], ...]         <- tuples, not {value,label} objects
+//   EDUCATION      [{ deg, school, period, colorKey }]
+//   SKILLS         { [categoryName]: [skill, ...] }   <- object map, not an array
+//   PROJECTS       [{ id, Category, Title, Metric, Description, Tech_Stack (csv string),
+//                      YouTube_Link, Drive_Link, GitHub_Link, LinkedIn_Link }]
+//   EXPERIENCE     [{ role, company, period, colorKey, points: [string, ...] }]
+//   CONTACT_LINE   string
 
 import React, { useState } from "react";
 import { getTheme } from "../shared/theme";
@@ -40,13 +48,13 @@ export default function ProfilePage({
   photoSrc,
   NAV = [],
   HERO_EYEBROW,
-  HERO_TAGLINE,
+  HERO_TAGLINE = [],
   HERO_SUB,
   HERO_STATS = [],
   CV_FILE,
   ABOUT_PARAGRAPHS = [],
   EDUCATION = [],
-  SKILLS = [],
+  SKILLS = {},
   PROJECT_FILTERS = [],
   CATEGORY_COLOR_KEYS = {},
   PROJECTS = [],
@@ -65,7 +73,11 @@ export default function ProfilePage({
   );
 
   const visibleProjects =
-    filter === "All" ? PROJECTS : PROJECTS.filter((p) => p.category === filter);
+    filter === "All" ? PROJECTS : PROJECTS.filter((p) => p.Category === filter);
+
+  const filters = PROJECT_FILTERS.includes("All")
+    ? PROJECT_FILTERS
+    : ["All", ...PROJECT_FILTERS];
 
   return (
     <div style={{ background: T.bg, color: T.text, minHeight: "100vh" }}>
@@ -76,7 +88,7 @@ export default function ProfilePage({
 
       {/* ---------------- HERO ---------------- */}
       <section
-        id="home"
+        id="hero"
         ref={heroRef}
         className="hero-grid-perspective"
         style={{
@@ -108,14 +120,14 @@ export default function ProfilePage({
           )}
 
           <h1 className="hero-headline" style={{ margin: "0 0 26px", color: T.text }}>
-            Kedar
+            {HERO_TAGLINE[0]}
             <br />
-            <span className="grad-text">Limbalkar</span>
+            <span className="grad-text">{HERO_TAGLINE[1]}</span>
           </h1>
 
-          {(HERO_TAGLINE || HERO_SUB) && (
+          {HERO_SUB && (
             <p style={{ fontSize: 17, color: T.muted, lineHeight: 1.6, maxWidth: 460, marginBottom: 34 }}>
-              {HERO_TAGLINE || HERO_SUB}
+              {HERO_SUB}
             </p>
           )}
 
@@ -131,13 +143,13 @@ export default function ProfilePage({
           </div>
 
           {HERO_STATS.length > 0 && (
-            <div style={{ display: "flex", gap: 40, borderTop: `1px solid ${T.border}`, paddingTop: 24 }}>
-              {HERO_STATS.map((s, i) => (
+            <div style={{ display: "flex", gap: 40, flexWrap: "wrap", borderTop: `1px solid ${T.border}`, paddingTop: 24 }}>
+              {HERO_STATS.map(([value, label], i) => (
                 <div key={i}>
                   <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 26 }}>
-                    {s.value}
+                    {value}
                   </div>
-                  <div style={{ fontSize: 13, color: T.muted }}>{s.label}</div>
+                  <div style={{ fontSize: 13, color: T.muted }}>{label}</div>
                 </div>
               ))}
             </div>
@@ -215,9 +227,9 @@ export default function ProfilePage({
                   <div className="glass" style={{ borderRadius: 16, padding: 20 }}>
                     <Tag color={colorMap[e.colorKey] || T.accent}>{e.period}</Tag>
                     <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17, marginTop: 10 }}>
-                      {e.title}
+                      {e.deg}
                     </div>
-                    <div style={{ color: T.muted, fontSize: 14 }}>{e.institution}</div>
+                    <div style={{ color: T.muted, fontSize: 14 }}>{e.school}</div>
                   </div>
                 </Reveal>
               ))}
@@ -227,21 +239,21 @@ export default function ProfilePage({
       )}
 
       {/* ---------------- SKILLS ---------------- */}
-      {SKILLS.length > 0 && (
+      {Object.keys(SKILLS).length > 0 && (
         <section id="skills" style={{ padding: "40px clamp(24px, 6vw, 72px)" }}>
           <Reveal>
             <SLabel T={T}>Skills</SLabel>
             <H2 T={T}>What I work with</H2>
           </Reveal>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 18 }}>
-            {SKILLS.map((group, i) => (
-              <Reveal key={i} className={`anim-${(i % 4) + 1}`}>
+            {Object.entries(SKILLS).map(([category, items], i) => (
+              <Reveal key={category} className={`anim-${(i % 4) + 1}`}>
                 <div className="glass" style={{ borderRadius: 16, padding: 20 }}>
                   <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, marginBottom: 12 }}>
-                    {group.category}
+                    {category}
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {(group.items || []).map((s) => (
+                    {items.map((s) => (
                       <Tag key={s} color={T.accent}>
                         {s}
                       </Tag>
@@ -262,9 +274,9 @@ export default function ProfilePage({
             <H2 T={T}>Selected work</H2>
           </Reveal>
 
-          {PROJECT_FILTERS.length > 0 && (
+          {filters.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 28 }}>
-              {["All", ...PROJECT_FILTERS].map((f) => (
+              {filters.map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
@@ -286,8 +298,8 @@ export default function ProfilePage({
           )}
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
-            {visibleProjects.map((p, i) => (
-              <Reveal key={p.title || i} className={`anim-${(i % 4) + 1}`}>
+            {visibleProjects.map((p) => (
+              <Reveal key={p.id} className={`anim-${(p.id % 4) + 1}`}>
                 <ProjectCard project={p} T={T} categoryColors={categoryColors} />
               </Reveal>
             ))}
@@ -315,8 +327,12 @@ export default function ProfilePage({
                   <div style={{ color: T.muted, fontSize: 14, marginTop: 4, marginBottom: 10 }}>
                     {e.company}
                   </div>
-                  {e.description && (
-                    <p style={{ color: T.muted, lineHeight: 1.65, fontSize: 14.5, margin: 0 }}>{e.description}</p>
+                  {Array.isArray(e.points) && e.points.length > 0 && (
+                    <ul style={{ margin: 0, paddingLeft: 18, color: T.muted, lineHeight: 1.65, fontSize: 14.5 }}>
+                      {e.points.map((pt, j) => (
+                        <li key={j}>{pt}</li>
+                      ))}
+                    </ul>
                   )}
                 </div>
               </Reveal>

@@ -1,51 +1,32 @@
-// NeuralField.jsx — v3
-// Pure Three.js (no react-three-fiber), same approach as v2, pushed much
-// further so it reads as a real hero centerpiece instead of a faint
-// background wallpaper:
-//   - nodes now colored by depth (near `color`, far `color2`) instead of a
-//     single flat hue, so the 3D-ness is visible even standing still
-//   - small "packet" points now travel along the currently-active edges,
-//     a literal read of "data in motion" that doubles for both profiles
-//     (inference signal on DS, pipeline throughput on DE)
-//   - edges rewritten into a shared LineSegments buffer every 6 frames
-//     (not every frame) to keep this cheap enough to also run at hero size
-//   - group still eases its rotation toward the cursor (parallax, not spin)
-//   - fully torn down in cleanup: geometries/materials disposed, canvas
-//     removed, listeners removed — safe across DS <-> DE route changes
+// NeuralField.jsx — v7
+// v5: fixed invisibility (Three.js r152+ ColorManagement was washing out
+//     colors on the r185 this repo actually runs).
+// v6: fixed "reads as flat" — was rotating around Z (spins flat toward
+//     viewer, hides depth) instead of Y (turntable, reveals depth); added
+//     back per-node depth-based color/size fade now that it's safe to.
+// v7: v6's rotation speed (0.0025 rad/frame) was technically animating but
+//     too subtle to read as "moving" in a quick glance — bumped ~6x.
 //
-// Props: color (required), color2 (optional — defaults to a lightened
-// version of `color`), nodeCount (default 56), className/style passthrough
-// for positioning (ProfilePage still controls position:absolute etc.)
+// Public API unchanged throughout: <NeuralField color color2 nodeCount />
 
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-function lighten(hex, amt = 0.35) {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  const mix = (c) => Math.round(c + (255 - c) * amt);
-  return `#${[mix(r), mix(g), mix(b)]
-    .map((v) => v.toString(16).padStart(2, "0"))
-    .join("")}`;
+// Opt out of Three r152+'s automatic sRGB color management so our hex
+// colors render exactly as specified — this one line is the primary fix.
+if (THREE.ColorManagement) {
+  THREE.ColorManagement.enabled = false;
 }
 
-export default function NeuralField({
-  color,
-  color2,
-  nodeCount = 56,
-  style,
-  className,
-}) {
+export default function NeuralField({ color, color2, nodeCount = 56, style, className }) {
   const mountRef = useRef(null);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
-    let width = mount.clientWidth || 1;
-    let height = mount.clientHeight || 1;
+    let width = mount.clientWidth || 800;
+    let height = mount.clientHeight || 600;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
@@ -54,9 +35,13 @@ export default function NeuralField({
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // belt-and-suspenders: force the "no color management" output path
+    // regardless of Three version quirks
+    if ("outputColorSpace" in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
     mount.appendChild(renderer.domElement);
 
     const group = new THREE.Group();
+    group.rotation.x = -0.15;
     scene.add(group);
 
     const spread = 6.5;
@@ -77,51 +62,59 @@ export default function NeuralField({
     }
 
     const c1 = new THREE.Color(color);
-    const c2 = new THREE.Color(color2 || lighten(color));
+    const c2 = new THREE.Color(color2 || color);
 
-    // shared glow sprite used by both nodes and packets
+    // solid circle sprite (opaque core, soft antialiased edge) — no reliance
+    // on additive blending or vertex-color multiplication to be visible
     const spriteCanvas = document.createElement("canvas");
     spriteCanvas.width = 64;
     spriteCanvas.height = 64;
     const sctx = spriteCanvas.getContext("2d");
-    const grad = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    sctx.beginPath();
+    sctx.arc(32, 32, 28, 0, Math.PI * 2);
+    const grad = sctx.createRadialGradient(32, 32, 0, 32, 32, 28);
     grad.addColorStop(0, "rgba(255,255,255,1)");
-    grad.addColorStop(0.25, "rgba(255,255,255,0.9)");
+    grad.addColorStop(0.7, "rgba(255,255,255,1)");
     grad.addColorStop(1, "rgba(255,255,255,0)");
     sctx.fillStyle = grad;
-    sctx.fillRect(0, 0, 64, 64);
+    sctx.fill();
     const spriteTex = new THREE.CanvasTexture(spriteCanvas);
 
-    // --- nodes ---
+    // --- nodes: vertex-colored (near = full accent, far = dimmer) so
+    // depth is visible even when the scene is standing still ---
     const nodeGeo = new THREE.BufferGeometry();
     const nodePositions = new Float32Array(nodeCount * 3);
     const nodeColors = new Float32Array(nodeCount * 3);
+    const nodeSizes = new Float32Array(nodeCount);
+    for (let i = 0; i < nodeCount; i++) {
+      nodePositions[i * 3] = nodes[i].pos.x;
+      nodePositions[i * 3 + 1] = nodes[i].pos.y;
+      nodePositions[i * 3 + 2] = nodes[i].pos.z;
+    }
     nodeGeo.setAttribute("position", new THREE.BufferAttribute(nodePositions, 3));
     nodeGeo.setAttribute("color", new THREE.BufferAttribute(nodeColors, 3));
     const nodeMat = new THREE.PointsMaterial({
-      size: 0.22,
+      size: 0.34,
       map: spriteTex,
       transparent: true,
       vertexColors: true,
-      blending: THREE.AdditiveBlending,
+      opacity: 1,
       depthWrite: false,
+      sizeAttenuation: true,
     });
     const nodePoints = new THREE.Points(nodeGeo, nodeMat);
     group.add(nodePoints);
 
-    // --- edges (rebuilt into a shared buffer, not recreated) ---
+    // --- edges: solid brighter accent, thicker visual weight via opacity ---
     const maxLinkDist = 3.4;
     const maxSegments = nodeCount * 6;
     const lineGeo = new THREE.BufferGeometry();
     const linePositions = new Float32Array(maxSegments * 2 * 3);
-    const lineColors = new Float32Array(maxSegments * 2 * 3);
     lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
-    lineGeo.setAttribute("color", new THREE.BufferAttribute(lineColors, 3));
     const lineMat = new THREE.LineBasicMaterial({
-      vertexColors: true,
+      color: c2,
       transparent: true,
-      opacity: 0.35,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.6,
       depthWrite: false,
     });
     const lineSegments = new THREE.LineSegments(lineGeo, lineMat);
@@ -133,12 +126,13 @@ export default function NeuralField({
     const packetPositions = new Float32Array(packetCount * 3);
     packetGeo.setAttribute("position", new THREE.BufferAttribute(packetPositions, 3));
     const packetMat = new THREE.PointsMaterial({
-      size: 0.3,
+      size: 0.4,
       map: spriteTex,
       transparent: true,
       color: c2,
-      blending: THREE.AdditiveBlending,
+      opacity: 1,
       depthWrite: false,
+      sizeAttenuation: true,
     });
     const packets = new THREE.Points(packetGeo, packetMat);
     group.add(packets);
@@ -149,9 +143,49 @@ export default function NeuralField({
       speed: 0.006 + Math.random() * 0.006,
     }));
 
+    // computes the current set of "close enough" node pairs and writes
+    // them into the shared line buffer. Called once synchronously below
+    // (before the first paint) and then every 6th animation frame.
     let activeEdges = [];
+    const recomputeEdges = () => {
+      activeEdges = [];
+      let segIdx = 0;
+      outer: for (let i = 0; i < nodeCount; i++) {
+        for (let j = i + 1; j < nodeCount; j++) {
+          if (segIdx >= maxSegments) break outer;
+          const d = nodes[i].pos.distanceTo(nodes[j].pos);
+          if (d < maxLinkDist) {
+            activeEdges.push([i, j]);
+            const p0 = nodes[i].pos;
+            const p1 = nodes[j].pos;
+            linePositions[segIdx * 6] = p0.x;
+            linePositions[segIdx * 6 + 1] = p0.y;
+            linePositions[segIdx * 6 + 2] = p0.z;
+            linePositions[segIdx * 6 + 3] = p1.x;
+            linePositions[segIdx * 6 + 4] = p1.y;
+            linePositions[segIdx * 6 + 5] = p1.z;
+            segIdx++;
+          }
+        }
+      }
+      lineGeo.attributes.position.needsUpdate = true;
+      lineGeo.setDrawRange(0, activeEdges.length * 2);
+    };
+    // run once immediately so edges (and therefore packets) are correct
+    // from the very first frame, instead of sitting at the origin for a
+    // few frames waiting for the periodic recompute
+    recomputeEdges();
+    if (activeEdges.length > 0) {
+      packetState.forEach((ps) => {
+        const e = activeEdges[Math.floor(Math.random() * activeEdges.length)];
+        ps.a = e[0];
+        ps.b = e[1];
+      });
+    }
+
     let target = { x: 0, y: 0 };
     let current = { x: 0, y: 0 };
+    let baseRotation = 0;
     const onMove = (e) => {
       target.x = (e.clientX / window.innerWidth - 0.5) * 2;
       target.y = (e.clientY / window.innerHeight - 0.5) * 2;
@@ -169,51 +203,22 @@ export default function NeuralField({
           if (n.pos[ax] > spread) n.vel[ax] -= 0.0006;
           if (n.pos[ax] < -spread) n.vel[ax] += 0.0006;
         });
-        const depthT = (n.pos.z + spread) / (spread * 2);
-        const col = c1.clone().lerp(c2, depthT);
         nodePositions[i * 3] = n.pos.x;
         nodePositions[i * 3 + 1] = n.pos.y;
         nodePositions[i * 3 + 2] = n.pos.z;
-        nodeColors[i * 3] = col.r;
-        nodeColors[i * 3 + 1] = col.g;
-        nodeColors[i * 3 + 2] = col.b;
+        // depth cue: nodes nearer the camera (larger z) render at full
+        // accent strength; nodes further away fade toward a dim, muted
+        // version — this is what makes depth readable even standing still
+        const depthT = (n.pos.z + spread) / (spread * 2); // 0 (far) .. 1 (near)
+        const strength = 0.35 + depthT * 0.65; // never fully invisible
+        nodeColors[i * 3] = c1.r * strength;
+        nodeColors[i * 3 + 1] = c1.g * strength;
+        nodeColors[i * 3 + 2] = c1.b * strength;
       }
       nodeGeo.attributes.position.needsUpdate = true;
       nodeGeo.attributes.color.needsUpdate = true;
 
-      if (frame % 6 === 0) {
-        activeEdges = [];
-        let segIdx = 0;
-        outer: for (let i = 0; i < nodeCount; i++) {
-          for (let j = i + 1; j < nodeCount; j++) {
-            if (segIdx >= maxSegments) break outer;
-            const d = nodes[i].pos.distanceTo(nodes[j].pos);
-            if (d < maxLinkDist) {
-              activeEdges.push([i, j]);
-              const p0 = nodes[i].pos;
-              const p1 = nodes[j].pos;
-              linePositions[segIdx * 6] = p0.x;
-              linePositions[segIdx * 6 + 1] = p0.y;
-              linePositions[segIdx * 6 + 2] = p0.z;
-              linePositions[segIdx * 6 + 3] = p1.x;
-              linePositions[segIdx * 6 + 4] = p1.y;
-              linePositions[segIdx * 6 + 5] = p1.z;
-              const fade = 1 - d / maxLinkDist;
-              const col = c1.clone().lerp(c2, 0.5).multiplyScalar(fade);
-              lineColors[segIdx * 6] = col.r;
-              lineColors[segIdx * 6 + 1] = col.g;
-              lineColors[segIdx * 6 + 2] = col.b;
-              lineColors[segIdx * 6 + 3] = col.r;
-              lineColors[segIdx * 6 + 4] = col.g;
-              lineColors[segIdx * 6 + 5] = col.b;
-              segIdx++;
-            }
-          }
-        }
-        lineGeo.attributes.position.needsUpdate = true;
-        lineGeo.attributes.color.needsUpdate = true;
-        lineGeo.setDrawRange(0, activeEdges.length * 2);
-      }
+      if (frame % 6 === 0) recomputeEdges();
 
       if (activeEdges.length > 0) {
         for (let i = 0; i < packetCount; i++) {
@@ -236,18 +241,18 @@ export default function NeuralField({
 
       current.x += (target.x - current.x) * 0.03;
       current.y += (target.y - current.y) * 0.03;
-      group.rotation.y = current.x * 0.35;
-      group.rotation.x = -current.y * 0.2;
-      group.rotation.z += 0.0006;
+      baseRotation += 0.015; // fast enough to be unmistakably moving —
+      // previous value (0.0025) was too subtle to read as "animating" in
+      // a quick glance even though it was technically rotating
+      group.rotation.y = baseRotation + current.x * 0.3;
+      group.rotation.x = -0.15 - current.y * 0.15; // slight permanent tilt
+      // so the depth axis is visible even at rest, not just a flat-on view
 
       renderer.render(scene, camera);
       raf = requestAnimationFrame(animate);
     };
 
-    // respect prefers-reduced-motion: render one static frame, skip the loop
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) {
       renderer.render(scene, camera);
     } else {
@@ -255,18 +260,21 @@ export default function NeuralField({
     }
 
     const onResize = () => {
-      width = mount.clientWidth || 1;
-      height = mount.clientHeight || 1;
+      width = mount.clientWidth || width;
+      height = mount.clientHeight || height;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
     };
     window.addEventListener("resize", onResize);
+    const ro = new ResizeObserver(onResize);
+    ro.observe(mount);
 
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("resize", onResize);
+      ro.disconnect();
       nodeGeo.dispose();
       lineGeo.dispose();
       packetGeo.dispose();
@@ -275,17 +283,9 @@ export default function NeuralField({
       packetMat.dispose();
       spriteTex.dispose();
       renderer.dispose();
-      if (mount.contains(renderer.domElement)) {
-        mount.removeChild(renderer.domElement);
-      }
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
   }, [color, color2, nodeCount]);
 
-  return (
-    <div
-      ref={mountRef}
-      className={className}
-      style={{ position: "absolute", inset: 0, ...style }}
-    />
-  );
+  return <div ref={mountRef} className={className} style={{ position: "absolute", inset: 0, ...style }} />;
 }
