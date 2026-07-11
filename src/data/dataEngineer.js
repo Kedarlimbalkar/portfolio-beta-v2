@@ -1,8 +1,4 @@
 // ─── DATA ENGINEER PROFILE ────────────────────────────────────────────────────
-// NOTE: the source resume (Kedar_Limbalkar_DE.pdf) isn't available in this
-// session — only the prior handoff's summary of it. Skills/projects below
-// follow that summary; double check the skill pills below against your
-// actual resume and adjust src/data/dataEngineer.js as needed.
 
 export const NAV = [
   { id: "hero",       label: "Home"       },
@@ -45,8 +41,6 @@ export const CATEGORY_COLOR_KEYS = {
   Pipeline: "green",
 };
 
-const GITHUB_PLACEHOLDER = "https://github.com/Kedarlimbalkar";
-
 export const PROJECTS = [
   {
     id: 1,
@@ -57,7 +51,7 @@ export const PROJECTS = [
     Tech_Stack:   "Python,Pandas,PostgreSQL,Apache Airflow,Docker,CoinGecko API",
     YouTube_Link: "",
     Drive_Link:   "",
-    GitHub_Link:  GITHUB_PLACEHOLDER,
+    GitHub_Link:  "https://github.com/Kedarlimbalkar/crypto-etl-pipeline",
     LinkedIn_Link:"",
   },
   {
@@ -69,19 +63,19 @@ export const PROJECTS = [
     Tech_Stack:   "Python,LangGraph,FAISS,Vector Embeddings,Pandas",
     YouTube_Link: "",
     Drive_Link:   "",
-    GitHub_Link:  GITHUB_PLACEHOLDER,
+    GitHub_Link:  "https://github.com/Kedarlimbalkar/Conversational_AI",
     LinkedIn_Link:"",
   },
   {
     id: 3,
     Category:     "Pipeline",
     Title:        "Emotion Recognition — Data & Inference Pipeline",
-    Metric:       "82% Model Accuracy",
-    Description:  "The data and inference pipeline behind the Facial Emotion Recognition System: real-time frame capture, preprocessing with OpenCV, and low-latency CNN inference served through Streamlit.",
+    Metric:       "82% Model Accuracy · Real-time inference",
+    Description:  "The data and inference pipeline behind the Facial Emotion Recognition System: real-time frame capture, OpenCV-based preprocessing (face detection, cropping, normalization), and low-latency CNN inference served through Streamlit. Built with a modular capture-to-prediction flow so the preprocessing stage can be swapped or scaled independently of the model.",
     Tech_Stack:   "Python,OpenCV,TensorFlow,Keras,Streamlit",
     YouTube_Link: "https://youtu.be/BErcoP1AWvw",
     Drive_Link:   "https://drive.google.com/drive/folders/1gfjU2y_Srzy9Un76rM22wZGR9UkwQq7n",
-    GitHub_Link:  "https://github.com/Kedarlimbalkar/facialRecog",
+    GitHub_Link:  "https://github.com/Kedarlimbalkar/Emotion-recognition",
     LinkedIn_Link:"",
   },
 ];
